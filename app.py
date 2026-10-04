@@ -1,5 +1,6 @@
 from flask import Flask, jsonify, request
 from inventory import inventory, get_next_id
+from external_api import fetch_by_barcode, fetch_by_name, extract_fields
 
 app = Flask(__name__)
 
@@ -62,6 +63,23 @@ def delete_item(item_id):
 
     inventory.remove(item)
     return jsonify({'message':f'Item {item_id} deleted.'}), 200
+
+@app.route('/inventory/fetch/barcode/<barcode>', methods=['GET'])
+def fetch_barcode_route(barcode):
+    product = fetch_by_barcode(barcode)
+    if not product:
+        return jsonify({'error': f"Product with barcode {barcode} not found"}), 404
+
+    return jsonify(extract_fields(product)), 200 
+
+
+@app.route('/inventory/fetch/name/<name>', methods=['GET'])
+def fetch_name_route(name):
+    products = fetch_by_name(name)
+    if not products:
+        return jsonify({'error':f'No products found for {name}'}), 404
+    return jsonify([extract_fields(p) for p in products[:5]]), 200
+
 
 
 if __name__ == "__main__":
